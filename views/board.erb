@@ -8,13 +8,27 @@ Let's Play Some Blackjack  <%=session[:current_game].player_one.name%>
 
 Player ones' hand is <%=session[:current_game].player_one.hand.hand_cards%>, with a value of <%=session[:current_game].player_one.hand.hand_value%>
 <br />
-Dealer is showing a <%=session[:current_game].player_dealer.hand.hand_cards[1]%>
-<br />
 
+<%=card_images(session[:current_game].player_one.hand.hand_cards)%>
+
+<br />
+<% if !session[:current_game].player_dealer.playing_now %>
+    Dealer is showing a <%=session[:current_game].player_dealer.hand.hand_cards[1]%>
+    <br />
+    <img src="images/cards/cover.jpg" height="115" width="80">
+
+    <%=card_images(session[:current_game].player_dealer.hand.hand_cards[1..1])%>
+
+    <br />
+<% end %>
 
 <% if session[:current_game].player_dealer.playing_now %>
     Dealers' hand is <%=session[:current_game].player_dealer.hand.hand_cards%> with a value of <%=session[:current_game].player_dealer.hand.hand_value%>
     <br />
+    <%=card_images(session[:current_game].player_dealer.hand.hand_cards)%>
+
+    <br />
+
 <% end %>
 
 <% if session[:current_game].game_over %>

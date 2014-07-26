@@ -189,6 +189,21 @@ class Game
 end
 
 
+helpers do
+  def calculate_current_money
+
+  end
+  def card_images(cards)
+    card_image_html = ""
+    card_name = {"A"=>"ace","K"=>"king","Q"=>"queen","J"=>"jack","10"=>"10","9"=>"9","8"=>"8","7"=>"7","6"=>"6","5"=>"5","4"=>"4","3"=>"3","2"=>"2"}
+    cards.each do |one_card|
+
+      card_image_html += "<img src = images/cards/clubs_#{card_name[one_card]}.jpg height=\"115\" width=\"80\">"
+    end
+    card_image_html
+  end
+end
+
 
 get '/play' do
   erb :get_player_name
