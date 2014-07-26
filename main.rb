@@ -4,7 +4,7 @@ require 'sinatra'
 set :sessions, true
 
 class Player
-  attr_accessor :name, :hand, :current_wins
+  attr_accessor :name, :hand, :current_wins, :playing_now
   @@number_of_players = 0
 
   def initialize(name)
@@ -12,14 +12,33 @@ class Player
     @@number_of_players += 1
     self.hand = Hand.new
     self.current_wins = 0
+    @playing_now = false
   end
 
   def self.number_of_players
     @@number_of_players
   end
 
-end
+  def player_busted
+    # do who wins logic
+    if hand.hand_value > 21
+      return true
+    end
+  end
 
+  def player_black_jack
+    # do who wins logic
+    if hand.hand_value == 21 && hand.hand_cards.count == 2
+      return true
+    end
+  end
+  def player_5_cards_under_21
+    # do who wins logic
+    if hand.hand_value < 21 && hand.hand_cards.count == 5
+      return true
+    end
+  end
+end
 class Hand
   attr_accessor :hand_cards, :hand_value
 
@@ -33,17 +52,8 @@ class Hand
   end
 
   def hand_value
-    #puts "made it here"
-    #puts self.hand_cards.count
-    #p self.hand_cards
-    #  if self.hand_cards.count < 2
-    #   return 0
-    # end
     card_value = {"A"=>11,"K"=>10,"Q"=>10,"J"=>10,"10"=>10,"9"=>9,"8"=>8,"7"=>7,"6"=>6,"5"=>5,"4"=>4,"3"=>3,"2"=>2}
 
-    # hand = ["A","A","Q"]
-
-    #puts self.hand_cards
     hand_sorted = self.hand_cards.sort_by{|x| card_value[x]}
     # puts hand_sorted
 
@@ -54,39 +64,15 @@ class Hand
       if current_value > 21 && one_card == "A"
         current_value = current_value - 10
       end
-      # else
-      #   current_value = current_value + one_card.to_i
-      # end
 
     end
     current_value
   end
 
   def hit_or_stay(shuffled_deck)
-    hit_one_card = "h"
 
-    while hit_one_card != "s" && self.hand_value < 21 && self.hand_cards.count < 5
-      puts "Your hand is currently #{self.hand_cards}"
-      puts "Card value of your hand is #{self.hand_value}"
-
-# want to hit or not
-      puts
-      puts "Would you like to Hit or Stay? (H or S)"
-      hit_one_card = gets.chomp
-      hit_one_card.downcase!
-#puts hit_one_card
-
-      if (hit_one_card == "h")
-        add_a_card(shuffled_deck.pop)
-      elsif hit_one_card == "s"
-        #puts player.hand
-        #puts player.hand_value
-        hit_one_card = "s"
-      else
-        puts "Please make sure you enter a H or S"
-      end
-
-    end
+   add_a_card(shuffled_deck.pop)
+  #  add_a_card("A")
 
   end
 
@@ -149,74 +135,57 @@ end
 
 class Game
 
-  attr_accessor :player_dealer, :player_one, :session
+  attr_accessor :player_dealer, :player_one, :shuffled_deck
 
-  def initialize(player_name, session)
-
-    #puts "What is your name: "
-   # player_name = gets.chomp
+  def initialize(player_name)
 
     @player_dealer = Player.new("Dealer")
     @player_one = Player.new(player_name)
 
-    session[:player_dealer] = @player_dealer
-    session[:player_one] = Player.new(player_name)
+  end
+
+  def start_play_game
+
+      @shuffled_deck = Deck.new(1)
+
+      player_one.hand = Hand.new
+      player_dealer.hand = Hand.new
+      player_one.playing_now = true
+      #puts
+
+      player_one.hand.add_a_card(shuffled_deck.current_deck_shuffled.pop)
+      player_dealer.hand.add_a_card(shuffled_deck.current_deck_shuffled.pop)
+      player_one.hand.add_a_card(shuffled_deck.current_deck_shuffled.pop)
+      player_dealer.hand.add_a_card(shuffled_deck.current_deck_shuffled.pop)
 
   end
 
-  def start_play_game(session)
-   # play_more = "y"
+  def game_over
+    player_dealer.playing_now && player_one.playing_now
+  end
 
-   # while play_more != "N"
-
-      shuffled_deck = Deck.new(4)
-
-      session[:shuffled_deck] = shuffled_deck
-
-      @player_one.hand = Hand.new
-      @player_dealer.hand = Hand.new
-
-      #puts
-
-      @player_one.hand.add_a_card(shuffled_deck.current_deck_shuffled.pop)
-      @player_dealer.hand.add_a_card(shuffled_deck.current_deck_shuffled.pop)
-      @player_one.hand.add_a_card(shuffled_deck.current_deck_shuffled.pop)
-      @player_dealer.hand.add_a_card(shuffled_deck.current_deck_shuffled.pop)
-
-
-      #puts "The player #{@player_dealer.name} is showing a #{@player_dealer.hand.hand_cards[1]}"
-      #puts
-      #puts "Player: #{@player_one.name} cards are #{@player_one.hand.hand_cards} for a total of #{@player_one.hand.hand_value}"
-
-      #  now lets play
-      #puts
-
-      #@player_one.hand.hit_or_stay(shuffled_deck.current_deck_shuffled)
-
-     # if @player_one.hand.hand_value > 21
-     #   message = "You busted, your hand of '#{@player_one.hand.hand_cards.join("','")}' has a hand value of #{@player_one.hand.hand_value}"
-     #   puts message
-     # end
-
-      # now deal to dealer
-     # @player_dealer.hand.hit_or_stay_dealer(shuffled_deck.current_deck_shuffled)
-
-     # puts
-     # puts "player #{@player_one.name} cards are #{@player_one.hand.hand_cards} with a total of #{@player_one.hand.hand_value}"
-     # puts
-     # calculate_winner(@player_one, @player_dealer)
-     # puts
-     # puts "Current score is you #{@player_one.current_wins} and the dealer #{@player_dealer.current_wins}"
-     # puts
-     # puts "Play again? (N or anything)"
-
-     # play_more = gets.chomp
-
-      # puts play_more
-
-    #end
+  def calculate_winner
+    # do who wins logic
+    if player_dealer.hand.hand_value > 21
+      player_one.current_wins += 1
+      return  "Dealer busted, dealer hand of '#{player_dealer.hand.hand_cards.join("','")}' has a hand value of #{player_dealer.hand.hand_value}"
+    elsif player_one.hand.hand_value > 21
+      player_dealer.current_wins += 1
+      return "You busted, your hand of '#{player_one.hand.hand_cards.join("','")}' has a hand value of #{player_one.hand.hand_value}"
+    elsif player_one.player_5_cards_under_21
+      player_one.current_wins += 1
+      return "You WIN, your hand of '#{player_one.hand.hand_cards.join("','")}' has a hand value of #{player_one.hand.hand_value} and is 5 cards"
+    elsif player_one.hand.hand_value > player_dealer.hand.hand_value
+      player_one.current_wins += 1
+      return "You WIN"
+    elsif player_one.hand.hand_value <= player_dealer.hand.hand_value
+      player_dealer.current_wins += 1
+      return "Sorry #{player_one.name} you LOSE"
+    end
 
   end
+
+
 end
 
 
@@ -228,16 +197,53 @@ end
 
 post '/save_player_name' do
   @name = params[:name]
-  session[:name] = @name
+  #session[:name] = @name
 
-  current_game = Game.new(@name, session)
-  current_game.start_play_game(session)
+  session[:current_game] = Game.new(@name)
+  redirect '/play_again'
+#  session[:current_game].start_play_game
+
+#  erb :board
+end
+
+
+post '/hit' do
+  session[:current_game].player_one.hand.hit_or_stay(session[:current_game].shuffled_deck.current_deck_shuffled)
+  if session[:current_game].player_one.player_busted
+    session[:current_game].player_dealer.playing_now = true
+  end
+  if session[:current_game].player_one.player_5_cards_under_21
+    session[:current_game].player_dealer.playing_now = true
+  end
+
+
+  erb :board
+end
+
+post '/stay' do
+  session[:current_game].player_dealer.playing_now = true
+  session[:current_game].player_dealer.hand.hit_or_stay_dealer(session[:current_game].shuffled_deck.current_deck_shuffled)
+
 
   erb :board
 end
 
 
-post '/hit' do
+get '/play_again' do
+  player_wins = session[:current_game].player_one.current_wins
+  dealer_wins = session[:current_game].player_dealer.current_wins
+#  player_name = session[:current_game].player_dealer.current_wins
+  session[:current_game] = Game.new(session[:current_game].player_one.name)
+  session[:current_game].start_play_game
+
+  session[:current_game].player_one.current_wins = player_wins
+  session[:current_game].player_dealer.current_wins = dealer_wins
+
+  if session[:current_game].player_one.player_black_jack || session[:current_game].player_dealer.player_black_jack
+    session[:current_game].player_dealer.playing_now = true
+  end
+
+
   erb :board
 end
 
@@ -252,5 +258,3 @@ end
 get '/nest' do
   erb :"/custom/nest"
 end
-
-
